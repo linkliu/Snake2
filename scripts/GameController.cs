@@ -1,5 +1,4 @@
 using Godot;
-using System;
 using System.Collections.Generic;
 
 public partial class GameController : Node2D
@@ -9,86 +8,187 @@ public partial class GameController : Node2D
     [Export] public PackedScene SnakeTailScene;
     [Export] public PackedScene FruitScene;
     [Export] public PackedScene WallScene;
+    [Export] public PackedScene OilBarrelScene;
 
     [Export] public Vector2I GridSize = new(24, 14);
-    [Export] public float MoveIntervalSeconds = 0.45f; // 速度降低约3倍
-    [Export] public float GravityIntervalSeconds = 0.15f;
+    [Export] public float MoveIntervalSeconds = 0.45f;
+    [Export] public float GravityIntervalSeconds = 0.12f;
 
     private readonly List<Vector2I> _snakeCells = new();
     private readonly List<Node2D> _snakeViews = new();
     private readonly HashSet<Vector2I> _obstacles = new();
-
-    private readonly Vector2I[] _extraWalls =
-    {
-        new(7, 10), new(8, 10), new(9, 10),
-        new(14, 8), new(14, 9), new(14, 10),
-        new(17, 6), new(18, 6),
-    };
+    private readonly List<LevelData> _levels = new();
 
     private Node2D _snakeRoot;
     private Node2D _wallRoot;
     private Node2D _fruitRoot;
+    private Node2D _barrelRoot;
+
+    private CanvasLayer _uiLayer;
+    private Label _statusLabel;
+    private Label _finalLabel;
 
     private Vector2I _direction = Vector2I.Right;
     private Vector2I _nextDirection = Vector2I.Right;
     private Vector2I _fruitCell;
+    private Vector2I _barrelCell;
+
+    private int _currentLevelIndex;
+    private int _fruitsEaten;
+    private int _requiredFruits;
 
     private float _moveTimer;
     private float _gravityTimer;
     private bool _dead;
-    private RandomNumberGenerator _rng = new();
+    private bool _gameCompleted;
+
+    private readonly RandomNumberGenerator _rng = new();
 
     public override void _Ready()
     {
-        _snakeRoot = new Node2D { Name = "SnakeRoot" };
+        _levels.AddRange(LevelDatabase.CreateLevels());
+
         _wallRoot = new Node2D { Name = "WallRoot" };
         _fruitRoot = new Node2D { Name = "FruitRoot" };
+        _barrelRoot = new Node2D { Name = "BarrelRoot" };
+        _snakeRoot = new Node2D { Name = "SnakeRoot" };
+
         AddChild(_wallRoot);
         AddChild(_fruitRoot);
+        AddChild(_barrelRoot);
         AddChild(_snakeRoot);
 
-        BuildBoundaryWalls();
-        BuildExtraWalls();
-        InitializeSnake();
-        SpawnFruit();
-        RefreshSnakeViews();
+        BuildUi();
+        LoadLevel(0);
     }
 
     public override void _Process(double delta)
     {
+        if (_gameCompleted)
+        {
+            return;
+        }
+
         if (_dead)
         {
             if (Input.IsActionJustPressed("ui_accept"))
             {
-                GetTree().ReloadCurrentScene();
+                LoadLevel(_currentLevelIndex);
             }
             return;
         }
 
-        HandleInput();
-
-        _moveTimer += (float)delta;
         _gravityTimer += (float)delta;
+        _moveTimer += (float)delta;
 
+        bool fellThisFrame = false;
         while (_gravityTimer >= GravityIntervalSeconds)
         {
             _gravityTimer -= GravityIntervalSeconds;
-            ApplyGravityStep();
+            bool fell = ApplyGravityStep();
+            fellThisFrame |= fell;
+
             if (_dead)
             {
                 return;
             }
         }
 
+        // 下落过程中禁止移动
+        if (fellThisFrame)
+        {
+            return;
+        }
+
+        HandleInput();
         while (_moveTimer >= MoveIntervalSeconds)
         {
             _moveTimer -= MoveIntervalSeconds;
             StepMove();
-            if (_dead)
+
+            if (_dead || _gameCompleted)
             {
                 return;
             }
         }
+    }
+
+    private void BuildUi()
+    {
+        _uiLayer = new CanvasLayer();
+        AddChild(_uiLayer);
+
+        _statusLabel = new Label
+        {
+            Position = new Vector2(12, 10),
+            Text = string.Empty
+        };
+        _uiLayer.AddChild(_statusLabel);
+
+        _finalLabel = new Label
+        {
+            Position = new Vector2(250, 180),
+            Text = string.Empty,
+            Visible = false
+        };
+        _uiLayer.AddChild(_finalLabel);
+    }
+
+    private void LoadLevel(int levelIndex)
+    {
+        _currentLevelIndex = levelIndex;
+        _dead = false;
+        _moveTimer = 0;
+        _gravityTimer = 0;
+
+        ClearChildren(_snakeRoot);
+        ClearChildren(_wallRoot);
+        ClearChildren(_fruitRoot);
+        ClearChildren(_barrelRoot);
+        _snakeViews.Clear();
+        _obstacles.Clear();
+
+        BuildBoundaryWalls();
+
+        var level = _levels[levelIndex];
+        _requiredFruits = level.RequiredFruits;
+        _fruitsEaten = 0;
+        _barrelCell = level.BarrelCell;
+
+        _direction = level.InitialDirection;
+        _nextDirection = level.InitialDirection;
+
+        BuildLevelObstacles(level);
+        InitializeSnake(level);
+        RenderOilBarrel();
+        SpawnFruit();
+        RefreshSnakeViews();
+        UpdateStatusUi($"{level.Name} | 水果: 0/{_requiredFruits}");
+    }
+
+    private void BuildLevelObstacles(LevelData level)
+    {
+        foreach (var cell in level.Obstacles)
+        {
+            AddWallCell(cell, true);
+        }
+
+        // 确保蛇出生点下方有障碍物
+        var support = level.SnakeSpawnHead + Vector2I.Down;
+        if (support.Y < GridSize.Y - 1)
+        {
+            AddWallCell(support, true);
+        }
+    }
+
+    private void InitializeSnake(LevelData level)
+    {
+        _snakeCells.Clear();
+        var head = level.SnakeSpawnHead;
+        _snakeCells.Add(head);
+        _snakeCells.Add(head - level.InitialDirection);
+        _snakeCells.Add(head - level.InitialDirection * 2);
+        _snakeCells.Add(head - level.InitialDirection * 3);
     }
 
     private void HandleInput()
@@ -112,53 +212,58 @@ public partial class GameController : Node2D
 
         if (HitsBoundary(newHead) || _obstacles.Contains(newHead))
         {
-            Die("蛇头撞到围墙/障碍物");
+            Die("撞到围墙或障碍物");
             return;
         }
 
         bool grow = newHead == _fruitCell;
         var tail = _snakeCells[^1];
-
         if (_snakeCells.Contains(newHead) && (grow || newHead != tail))
         {
-            Die("蛇头撞到自己");
+            Die("撞到自己");
             return;
         }
 
         _snakeCells.Insert(0, newHead);
-        if (!grow)
+        if (grow)
         {
-            _snakeCells.RemoveAt(_snakeCells.Count - 1);
+            _fruitsEaten++;
+            SpawnFruit();
         }
         else
         {
-            SpawnFruit();
+            _snakeCells.RemoveAt(_snakeCells.Count - 1);
         }
 
         RefreshSnakeViews();
+        TryConsumeBarrel();
+        UpdateStatusUi($"{_levels[_currentLevelIndex].Name} | 水果: {_fruitsEaten}/{_requiredFruits}");
     }
 
-    private void ApplyGravityStep()
+    // 返回 true 表示本步发生了下落
+    private bool ApplyGravityStep()
     {
-        if (IsSupported())
+        // 规则：只要蛇任意格子下方有障碍物，就不下坠
+        if (IsSupportedByObstacle())
         {
-            return;
+            return false;
         }
 
         var moved = new List<Vector2I>(_snakeCells.Count);
         foreach (var cell in _snakeCells)
         {
             var next = cell + Vector2I.Down;
+
             if (next.Y >= GridSize.Y - 1)
             {
-                Die("蛇掉落碰到底部围墙");
-                return;
+                Die("掉到底部围墙");
+                return false;
             }
 
             if (_obstacles.Contains(next))
             {
-                Die("蛇掉落撞到障碍物");
-                return;
+                Die("下落撞到障碍物");
+                return false;
             }
 
             moved.Add(next);
@@ -167,15 +272,15 @@ public partial class GameController : Node2D
         _snakeCells.Clear();
         _snakeCells.AddRange(moved);
         RefreshSnakeViews();
+        return true;
     }
 
-    private bool IsSupported()
+    private bool IsSupportedByObstacle()
     {
-        var snakeSet = new HashSet<Vector2I>(_snakeCells);
         foreach (var cell in _snakeCells)
         {
             var below = cell + Vector2I.Down;
-            if (snakeSet.Contains(below) || _obstacles.Contains(below))
+            if (_obstacles.Contains(below))
             {
                 return true;
             }
@@ -183,68 +288,36 @@ public partial class GameController : Node2D
         return false;
     }
 
-    private bool HitsBoundary(Vector2I cell)
+    private void TryConsumeBarrel()
     {
-        return cell.X <= 0 || cell.X >= GridSize.X - 1 || cell.Y <= 0 || cell.Y >= GridSize.Y - 1;
-    }
-
-    private void BuildBoundaryWalls()
-    {
-        for (int x = 0; x < GridSize.X; x++)
+        if (_snakeCells[0] != _barrelCell)
         {
-            AddWallCell(new Vector2I(x, 0));
-            AddWallCell(new Vector2I(x, GridSize.Y - 1), addToObstacle: false); // 底墙可见但判定为致死
+            return;
         }
 
-        for (int y = 1; y < GridSize.Y - 1; y++)
+        if (_fruitsEaten < _requiredFruits)
         {
-            AddWallCell(new Vector2I(0, y));
-            AddWallCell(new Vector2I(GridSize.X - 1, y));
-        }
-    }
-
-    private void BuildExtraWalls()
-    {
-        foreach (var cell in _extraWalls)
-        {
-            AddWallCell(cell);
-        }
-    }
-
-    private void AddWallCell(Vector2I cell, bool addToObstacle = true)
-    {
-        if (WallScene == null) return;
-
-        var wall = WallScene.Instantiate<Node2D>();
-        if (wall is CellView view)
-        {
-            view.SetCell(cell);
-        }
-        else
-        {
-            wall.Position = new Vector2(cell.X * GridConfig.CellSize, cell.Y * GridConfig.CellSize);
+            UpdateStatusUi($"还需要吃水果: {_requiredFruits - _fruitsEaten}");
+            return;
         }
 
-        _wallRoot.AddChild(wall);
-        if (addToObstacle)
+        if (_currentLevelIndex == _levels.Count - 1)
         {
-            _obstacles.Add(cell);
+            _gameCompleted = true;
+            _finalLabel.Text = "恭喜通关";
+            _finalLabel.Visible = true;
+            UpdateStatusUi("全部关卡完成");
+            return;
         }
-    }
 
-    private void InitializeSnake()
-    {
-        _snakeCells.Clear();
-        _snakeCells.Add(new Vector2I(5, 4));
-        _snakeCells.Add(new Vector2I(4, 4));
-        _snakeCells.Add(new Vector2I(3, 4));
-        _snakeCells.Add(new Vector2I(2, 4));
+        LoadLevel(_currentLevelIndex + 1);
     }
 
     private void SpawnFruit()
     {
         var used = new HashSet<Vector2I>(_snakeCells);
         used.UnionWith(_obstacles);
+        used.Add(_barrelCell);
 
         var candidates = new List<Vector2I>();
         for (int y = 1; y < GridSize.Y - 1; y++)
@@ -261,7 +334,7 @@ public partial class GameController : Node2D
 
         if (candidates.Count == 0)
         {
-            Die("地图没有可生成水果的位置");
+            Die("没有可生成水果的位置");
             return;
         }
 
@@ -271,24 +344,57 @@ public partial class GameController : Node2D
 
     private void RenderFruit()
     {
-        foreach (var child in _fruitRoot.GetChildren())
-        {
-            (child as Node)?.QueueFree();
-        }
-
+        ClearChildren(_fruitRoot);
         if (FruitScene == null) return;
 
         var fruit = FruitScene.Instantiate<Node2D>();
-        if (fruit is CellView view)
+        SetNodeCell(fruit, _fruitCell);
+        _fruitRoot.AddChild(fruit);
+    }
+
+    private void RenderOilBarrel()
+    {
+        ClearChildren(_barrelRoot);
+        if (OilBarrelScene == null) return;
+
+        var barrel = OilBarrelScene.Instantiate<Node2D>();
+        SetNodeCell(barrel, _barrelCell);
+        _barrelRoot.AddChild(barrel);
+    }
+
+    private void BuildBoundaryWalls()
+    {
+        for (int x = 0; x < GridSize.X; x++)
         {
-            view.SetCell(_fruitCell);
-        }
-        else
-        {
-            fruit.Position = new Vector2(_fruitCell.X * GridConfig.CellSize, _fruitCell.Y * GridConfig.CellSize);
+            AddWallCell(new Vector2I(x, 0), false);
+            AddWallCell(new Vector2I(x, GridSize.Y - 1), false);
         }
 
-        _fruitRoot.AddChild(fruit);
+        for (int y = 1; y < GridSize.Y - 1; y++)
+        {
+            AddWallCell(new Vector2I(0, y), false);
+            AddWallCell(new Vector2I(GridSize.X - 1, y), false);
+        }
+    }
+
+    private bool HitsBoundary(Vector2I cell)
+    {
+        return cell.X <= 0 || cell.X >= GridSize.X - 1 || cell.Y <= 0 || cell.Y >= GridSize.Y - 1;
+    }
+
+    private void AddWallCell(Vector2I cell, bool asObstacle)
+    {
+        if (WallScene != null)
+        {
+            var wall = WallScene.Instantiate<Node2D>();
+            SetNodeCell(wall, cell);
+            _wallRoot.AddChild(wall);
+        }
+
+        if (asObstacle)
+        {
+            _obstacles.Add(cell);
+        }
     }
 
     private void RefreshSnakeViews()
@@ -301,33 +407,44 @@ public partial class GameController : Node2D
 
         for (int i = 0; i < _snakeCells.Count; i++)
         {
-            PackedScene prefab = i switch
-            {
-                0 => SnakeHeadScene,
-                _ when i == _snakeCells.Count - 1 => SnakeTailScene,
-                _ => SnakeBodyScene,
-            };
-
+            var prefab = i == 0 ? SnakeHeadScene : (i == _snakeCells.Count - 1 ? SnakeTailScene : SnakeBodyScene);
             if (prefab == null) continue;
+
             var segment = prefab.Instantiate<Node2D>();
-
-            if (segment is CellView view)
-            {
-                view.SetCell(_snakeCells[i]);
-            }
-            else
-            {
-                segment.Position = new Vector2(_snakeCells[i].X * GridConfig.CellSize, _snakeCells[i].Y * GridConfig.CellSize);
-            }
-
+            SetNodeCell(segment, _snakeCells[i]);
             _snakeRoot.AddChild(segment);
             _snakeViews.Add(segment);
         }
     }
 
+    private static void SetNodeCell(Node2D node, Vector2I cell)
+    {
+        if (node is CellView view)
+        {
+            view.SetCell(cell);
+        }
+        else
+        {
+            node.Position = new Vector2(cell.X * GridConfig.CellSize, cell.Y * GridConfig.CellSize);
+        }
+    }
+
+    private static void ClearChildren(Node parent)
+    {
+        foreach (var child in parent.GetChildren())
+        {
+            (child as Node)?.QueueFree();
+        }
+    }
+
+    private void UpdateStatusUi(string text)
+    {
+        _statusLabel.Text = text;
+    }
+
     private void Die(string reason)
     {
         _dead = true;
-        GD.Print($"Game Over: {reason}. 按 Enter 重开。");
+        UpdateStatusUi($"{_levels[_currentLevelIndex].Name} 失败：{reason}（Enter重开）");
     }
 }
