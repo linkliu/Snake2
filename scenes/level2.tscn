@@ -1,6 +1,6 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene format=3 uid="uid://c0twxkwmv5741"]
 
-[ext_resource type="Script" path="res://scripts/GameController.cs" id="1_game"]
+[ext_resource type="Script" uid="uid://oodi71etvenj" path="res://scripts/GameController.cs" id="1_game"]
 [ext_resource type="PackedScene" path="res://scenes/parts/snake_head.tscn" id="2_head"]
 [ext_resource type="PackedScene" path="res://scenes/parts/snake_body.tscn" id="3_body"]
 [ext_resource type="PackedScene" path="res://scenes/parts/snake_tail.tscn" id="4_tail"]
@@ -8,7 +8,8 @@
 [ext_resource type="PackedScene" path="res://scenes/parts/oil_barrel.tscn" id="6_barrel"]
 [ext_resource type="PackedScene" path="res://scenes/parts/fruit.tscn" id="7_fruit"]
 
-[node name="Root" type="Node2D"]
+[node name="Root" type="Node2D" unique_id=1579471897]
+position = Vector2(0, -1)
 script = ExtResource("1_game")
 SnakeHeadScene = ExtResource("2_head")
 SnakeBodyScene = ExtResource("3_body")
@@ -17,50 +18,50 @@ WallScene = ExtResource("5_wall")
 RequiredFruits = 3
 NextLevelScene = "res://scenes/level3.tscn"
 
-[node name="Obstacles" type="Node2D" parent="."]
+[node name="Obstacles" type="Node2D" parent="." unique_id=239283236]
 
-[node name="Wall1" parent="Obstacles" instance=ExtResource("5_wall")]
+[node name="Wall1" parent="Obstacles" unique_id=1865083277 instance=ExtResource("5_wall")]
 position = Vector2(160, 352)
 
-[node name="Wall2" parent="Obstacles" instance=ExtResource("5_wall")]
+[node name="Wall2" parent="Obstacles" unique_id=1888948644 instance=ExtResource("5_wall")]
 position = Vector2(192, 352)
 
-[node name="Wall3" parent="Obstacles" instance=ExtResource("5_wall")]
+[node name="Wall3" parent="Obstacles" unique_id=1747481501 instance=ExtResource("5_wall")]
 position = Vector2(256, 288)
 
-[node name="Wall4" parent="Obstacles" instance=ExtResource("5_wall")]
+[node name="Wall4" parent="Obstacles" unique_id=470492104 instance=ExtResource("5_wall")]
 position = Vector2(288, 288)
 
-[node name="Wall5" parent="Obstacles" instance=ExtResource("5_wall")]
+[node name="Wall5" parent="Obstacles" unique_id=734221568 instance=ExtResource("5_wall")]
 position = Vector2(320, 288)
 
-[node name="Wall6" parent="Obstacles" instance=ExtResource("5_wall")]
-position = Vector2(416, 256)
+[node name="Wall6" parent="Obstacles" unique_id=1097220999 instance=ExtResource("5_wall")]
+position = Vector2(448, 257)
 
-[node name="Wall7" parent="Obstacles" instance=ExtResource("5_wall")]
-position = Vector2(448, 256)
+[node name="Wall7" parent="Obstacles" unique_id=2021199026 instance=ExtResource("5_wall")]
+position = Vector2(480, 257)
 
-[node name="Wall8" parent="Obstacles" instance=ExtResource("5_wall")]
+[node name="Wall8" parent="Obstacles" unique_id=1262619167 instance=ExtResource("5_wall")]
 position = Vector2(544, 192)
 
-[node name="Wall9" parent="Obstacles" instance=ExtResource("5_wall")]
+[node name="Wall9" parent="Obstacles" unique_id=1395889537 instance=ExtResource("5_wall")]
 position = Vector2(576, 192)
 
-[node name="Fruits" type="Node2D" parent="."]
+[node name="Fruits" type="Node2D" parent="." unique_id=795298160]
 
-[node name="Fruit1" parent="Fruits" instance=ExtResource("7_fruit")]
+[node name="Fruit1" parent="Fruits" unique_id=1341220473 instance=ExtResource("7_fruit")]
 position = Vector2(224, 256)
 
-[node name="Fruit2" parent="Fruits" instance=ExtResource("7_fruit")]
-position = Vector2(384, 224)
+[node name="Fruit2" parent="Fruits" unique_id=2077149816 instance=ExtResource("7_fruit")]
+position = Vector2(384, 129)
 
-[node name="Fruit3" parent="Fruits" instance=ExtResource("7_fruit")]
+[node name="Fruit3" parent="Fruits" unique_id=630126872 instance=ExtResource("7_fruit")]
 position = Vector2(512, 160)
 
-[node name="Goal" type="Node2D" parent="."]
+[node name="Goal" type="Node2D" parent="." unique_id=840906657]
 
-[node name="OilBarrel" parent="Goal" instance=ExtResource("6_barrel")]
+[node name="OilBarrel" parent="Goal" unique_id=1185942004 instance=ExtResource("6_barrel")]
 position = Vector2(608, 128)
 
-[node name="SnakeSpawn" type="Marker2D" parent="."]
+[node name="SnakeSpawn" type="Marker2D" parent="." unique_id=1427103971]
 position = Vector2(160, 320)
