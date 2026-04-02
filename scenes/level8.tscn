@@ -14,50 +14,62 @@ SnakeHeadScene = ExtResource("2_head")
 SnakeBodyScene = ExtResource("3_body")
 SnakeTailScene = ExtResource("4_tail")
 WallScene = ExtResource("5_wall")
-RequiredFruits = 2
-NextLevelScene = "res://scenes/level2.tscn"
+RequiredFruits = 6
+NextLevelScene = "res://scenes/level9.tscn"
 
 [node name="Obstacles" type="Node2D" parent="."]
 
 [node name="Wall1" parent="Obstacles" instance=ExtResource("5_wall")]
-position = Vector2(128, 320)
+position = Vector2(192, 320)
 
 [node name="Wall2" parent="Obstacles" instance=ExtResource("5_wall")]
-position = Vector2(160, 320)
+position = Vector2(224, 320)
 
 [node name="Wall3" parent="Obstacles" instance=ExtResource("5_wall")]
-position = Vector2(192, 320)
+position = Vector2(288, 288)
 
 [node name="Wall4" parent="Obstacles" instance=ExtResource("5_wall")]
 position = Vector2(320, 288)
 
 [node name="Wall5" parent="Obstacles" instance=ExtResource("5_wall")]
-position = Vector2(352, 288)
+position = Vector2(384, 224)
 
 [node name="Wall6" parent="Obstacles" instance=ExtResource("5_wall")]
-position = Vector2(384, 288)
+position = Vector2(416, 224)
 
 [node name="Wall7" parent="Obstacles" instance=ExtResource("5_wall")]
-position = Vector2(480, 224)
+position = Vector2(448, 224)
 
 [node name="Wall8" parent="Obstacles" instance=ExtResource("5_wall")]
-position = Vector2(512, 224)
+position = Vector2(512, 192)
 
 [node name="Wall9" parent="Obstacles" instance=ExtResource("5_wall")]
-position = Vector2(544, 224)
+position = Vector2(544, 192)
+
+[node name="Wall10" parent="Obstacles" instance=ExtResource("5_wall")]
+position = Vector2(576, 128)
+
+[node name="Wall11" parent="Obstacles" instance=ExtResource("5_wall")]
+position = Vector2(608, 128)
 
 [node name="Fruits" type="Node2D" parent="."]
 
 [node name="Fruit1" parent="Fruits" instance=ExtResource("7_fruit")]
-position = Vector2(256, 256)
+position = Vector2(256, 288)
 
 [node name="Fruit2" parent="Fruits" instance=ExtResource("7_fruit")]
-position = Vector2(416, 192)
+position = Vector2(352, 256)
+
+[node name="Fruit3" parent="Fruits" instance=ExtResource("7_fruit")]
+position = Vector2(480, 224)
+
+[node name="Fruit4" parent="Fruits" instance=ExtResource("7_fruit")]
+position = Vector2(640, 160)
 
 [node name="Goal" type="Node2D" parent="."]
 
 [node name="OilBarrel" parent="Goal" instance=ExtResource("6_barrel")]
-position = Vector2(576, 96)
+position = Vector2(640, 64)
 
 [node name="SnakeSpawn" type="Marker2D" parent="."]
-position = Vector2(128, 288)
+position = Vector2(192, 288)
