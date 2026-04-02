@@ -1,3 +1,16 @@
-[gd_scene format=3 uid="uid://du8bd10sloh8o"]
+[gd_scene load_steps=6 format=3 uid="uid://du8bd10sloh8o"]
 
-[node name="Root" type="Node2D" unique_id=579105354]
+[ext_resource type="Script" path="res://scripts/GameController.cs" id="1_game"]
+[ext_resource type="PackedScene" path="res://scenes/parts/snake_head.tscn" id="2_head"]
+[ext_resource type="PackedScene" path="res://scenes/parts/snake_body.tscn" id="3_body"]
+[ext_resource type="PackedScene" path="res://scenes/parts/snake_tail.tscn" id="4_tail"]
+[ext_resource type="PackedScene" path="res://scenes/parts/fruit.tscn" id="5_fruit"]
+[ext_resource type="PackedScene" path="res://scenes/parts/wall.tscn" id="6_wall"]
+
+[node name="Root" type="Node2D"]
+script = ExtResource("1_game")
+SnakeHeadScene = ExtResource("2_head")
+SnakeBodyScene = ExtResource("3_body")
+SnakeTailScene = ExtResource("4_tail")
+FruitScene = ExtResource("5_fruit")
+WallScene = ExtResource("6_wall")
