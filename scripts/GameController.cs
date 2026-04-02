@@ -56,6 +56,7 @@ public partial class GameController : Node2D
         BuildUi();
         BuildBoundaryVisuals();
         ReadSceneData();
+        NormalizeRequiredFruits();
         InitializeSnake();
         RefreshSnakeViews();
         UpdateStatusUi();
@@ -277,6 +278,20 @@ public partial class GameController : Node2D
         }
 
         GetTree().ChangeSceneToFile(NextLevelScene);
+    }
+
+    private void NormalizeRequiredFruits()
+    {
+        if (RequiredFruits > _fruits.Count)
+        {
+            GD.PushWarning($"RequiredFruits({RequiredFruits}) 大于场景水果数量({_fruits.Count})，已自动修正。");
+            RequiredFruits = _fruits.Count;
+        }
+
+        if (RequiredFruits < 0)
+        {
+            RequiredFruits = 0;
+        }
     }
 
     private bool HitsBoundary(Vector2I cell)

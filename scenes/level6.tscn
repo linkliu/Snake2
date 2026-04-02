@@ -14,7 +14,7 @@ SnakeHeadScene = ExtResource("2_head")
 SnakeBodyScene = ExtResource("3_body")
 SnakeTailScene = ExtResource("4_tail")
 WallScene = ExtResource("5_wall")
-RequiredFruits = 5
+RequiredFruits = 4
 NextLevelScene = "res://scenes/level7.tscn"
 
 [node name="Obstacles" type="Node2D" parent="."]
