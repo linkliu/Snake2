@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://bs0k5nqj1cpc"]
+
+[ext_resource type="Script" uid="uid://dab0ofqrljdw8" path="res://scripts/CellView.cs" id="1_cell"]
+
+[node name="SnakeHead" type="Node2D" unique_id=1163867490]
+script = ExtResource("1_cell")
+Color = Color(0.9, 0.2, 0.2, 1)
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1487820378]
+offset_right = 32.0
+offset_bottom = 32.0
+color = Color(0.9, 0.2, 0.2, 1)

@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://b5u4lhd41fdot"]
+
+[ext_resource type="Script" uid="uid://dab0ofqrljdw8" path="res://scripts/CellView.cs" id="1_cell"]
+[ext_resource type="Texture2D" uid="uid://cb0kas3lbr842" path="res://assets/oil-2.png" id="2_i22q3"]
+
+[node name="OilBarrel" type="Node2D" unique_id=1793197085]
+script = ExtResource("1_cell")
+Color = Color(0.1, 0.1, 0.1, 1)
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1770772302]
+offset_right = 32.0
+offset_bottom = 32.0
+color = Color(0.1, 0.1, 0.1, 1)
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1538370480]
+position = Vector2(16, 16)
+texture = ExtResource("2_i22q3")

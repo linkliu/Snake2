@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://d17wja8d12h1t"]
+
+[ext_resource type="Script" uid="uid://dab0ofqrljdw8" path="res://scripts/CellView.cs" id="1_cell"]
+
+[node name="Fruit" type="Node2D" unique_id=1633462842]
+script = ExtResource("1_cell")
+Color = Color(1, 0.6, 0.1, 1)
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=448832887]
+offset_right = 32.0
+offset_bottom = 32.0
+color = Color(1, 0.6, 0.1, 1)
